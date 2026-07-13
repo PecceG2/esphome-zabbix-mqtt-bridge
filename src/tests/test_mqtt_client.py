@@ -99,3 +99,29 @@ def test_on_message_routes_state_to_value():
     msg.payload = b"21.0"
     client._on_message(mock_paho, None, msg)
     sender.send_value.assert_called_once_with("esp32_k1_temp", "21.0")
+
+
+def test_credentials_set_when_provided():
+    registry = DiscoveryRegistry()
+    sender = MagicMock(spec=ZabbixSender)
+    config_with_creds = Config(
+        mqtt_broker="localhost",
+        mqtt_port=1883,
+        discovery_prefix="zbx",
+        zabbix_server="127.0.0.1",
+        zabbix_port=10051,
+        zabbix_host="MQTT-Bridge",
+        log_level="INFO",
+        mqtt_user="myuser",
+        mqtt_password="secret",
+    )
+    with patch("bridge.mqtt_client.mqtt.Client") as MockMQTT:
+        mock_paho = MagicMock()
+        MockMQTT.return_value = mock_paho
+        MQTTClient(config_with_creds, registry, sender)
+    mock_paho.username_pw_set.assert_called_once_with("myuser", "secret")
+
+
+def test_credentials_not_set_when_absent():
+    client, _, _, mock_paho = make_client()
+    mock_paho.username_pw_set.assert_not_called()

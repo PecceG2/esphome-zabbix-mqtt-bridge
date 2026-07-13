@@ -1,5 +1,6 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass
@@ -11,6 +12,8 @@ class Config:
     zabbix_port: int
     zabbix_host: str
     log_level: str
+    mqtt_user: Optional[str] = None
+    mqtt_password: Optional[str] = None
 
 
 def load_config() -> Config:
@@ -28,4 +31,6 @@ def load_config() -> Config:
         zabbix_port=int(os.environ.get("ZABBIX_PORT", "10051")),
         zabbix_host=os.environ.get("ZABBIX_HOST", "MQTT-Bridge"),
         log_level=os.environ.get("LOG_LEVEL", "INFO"),
+        mqtt_user=os.environ.get("MQTT_USER") or None,
+        mqtt_password=os.environ.get("MQTT_PASSWORD") or None,
     )

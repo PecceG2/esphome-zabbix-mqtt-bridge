@@ -17,6 +17,8 @@ class MQTTClient:
         self._registry = registry
         self._sender = sender
         self._client = mqtt.Client()
+        if config.mqtt_user:
+            self._client.username_pw_set(config.mqtt_user, config.mqtt_password)
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
 

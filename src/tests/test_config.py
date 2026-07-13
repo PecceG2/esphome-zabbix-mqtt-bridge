@@ -27,13 +27,26 @@ def test_uses_defaults_for_optional_vars(monkeypatch):
     monkeypatch.setenv("MQTT_BROKER", "localhost")
     monkeypatch.setenv("DISCOVERY_PREFIX", "zbx")
     monkeypatch.setenv("ZABBIX_SERVER", "127.0.0.1")
-    for var in ("MQTT_PORT", "ZABBIX_PORT", "ZABBIX_HOST", "LOG_LEVEL"):
+    for var in ("MQTT_PORT", "ZABBIX_PORT", "ZABBIX_HOST", "LOG_LEVEL", "MQTT_USER", "MQTT_PASSWORD"):
         monkeypatch.delenv(var, raising=False)
     config = load_config()
     assert config.mqtt_port == 1883
     assert config.zabbix_port == 10051
     assert config.zabbix_host == "MQTT-Bridge"
     assert config.log_level == "INFO"
+    assert config.mqtt_user is None
+    assert config.mqtt_password is None
+
+
+def test_reads_mqtt_credentials(monkeypatch):
+    monkeypatch.setenv("MQTT_BROKER", "localhost")
+    monkeypatch.setenv("DISCOVERY_PREFIX", "zbx")
+    monkeypatch.setenv("ZABBIX_SERVER", "127.0.0.1")
+    monkeypatch.setenv("MQTT_USER", "myuser")
+    monkeypatch.setenv("MQTT_PASSWORD", "secret")
+    config = load_config()
+    assert config.mqtt_user == "myuser"
+    assert config.mqtt_password == "secret"
 
 
 def test_reads_all_vars(monkeypatch):
