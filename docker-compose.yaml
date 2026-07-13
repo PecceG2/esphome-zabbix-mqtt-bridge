@@ -9,6 +9,7 @@ services:
       - ./mosquitto/log:/mosquitto/log
 
   bridge:
+    image: pecceg2/esphome-zabbix-mqtt-bridge:latest
     build: ./src
     restart: unless-stopped
     depends_on:

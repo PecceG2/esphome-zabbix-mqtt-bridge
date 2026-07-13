@@ -46,7 +46,7 @@ Supported entity domains: `sensor`, `binary_sensor`, `text_sensor`.
 ### 2. Configure the bridge
 
 ```bash
-git clone https://github.com/your-org/esphome-zabbix-mqtt-bridge.git
+git clone https://github.com/PecceG2/esphome-zabbix-mqtt-bridge.git
 cd esphome-zabbix-mqtt-bridge
 cp .env.example .env
 ```
@@ -63,8 +63,18 @@ See `.env.example` for all available options and their defaults.
 
 ### 3. Start the stack
 
+**Option A — use the pre-built image from Docker Hub (recommended):**
+
 ```bash
 docker compose up -d
+```
+
+The `docker-compose.yaml` pulls `pecceg2/esphome-zabbix-mqtt-bridge:latest` automatically — no build step needed.
+
+**Option B — build locally from source:**
+
+```bash
+docker compose up -d --build
 ```
 
 This starts Mosquitto on port 1883 and the bridge. Mosquitto data and logs are persisted under `mosquitto/data/` and `mosquitto/log/` (both gitignored).
