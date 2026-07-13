@@ -1,0 +1,23 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  bridge:
+    build: ./src
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    environment:
+      MQTT_BROKER: mosquitto
+      MQTT_PORT: ${MQTT_PORT:-1883}
+      DISCOVERY_PREFIX: ${DISCOVERY_PREFIX:-zbx}
+      ZABBIX_SERVER: ${ZABBIX_SERVER}
+      ZABBIX_PORT: ${ZABBIX_PORT:-10051}
+      ZABBIX_HOST: ${ZABBIX_HOST:-MQTT-Bridge}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
