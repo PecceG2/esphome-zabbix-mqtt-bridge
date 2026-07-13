@@ -125,3 +125,11 @@ def test_credentials_set_when_provided():
 def test_credentials_not_set_when_absent():
     client, _, _, mock_paho = make_client()
     mock_paho.username_pw_set.assert_not_called()
+
+
+def test_start_retries_on_connect_exception():
+    client, _, _, mock_paho = make_client()
+    mock_paho.connect.side_effect = [OSError("Name resolution failed"), None]
+    mock_paho.loop_forever.return_value = None
+    client.start()
+    assert mock_paho.connect.call_count == 2

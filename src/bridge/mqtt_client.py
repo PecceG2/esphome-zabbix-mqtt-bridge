@@ -61,6 +61,16 @@ class MQTTClient:
         self._sender.send_value(entry.sensor_id, value)
 
     def start(self):
+        import time
         self._client.reconnect_delay_set(min_delay=1, max_delay=128)
-        self._client.connect(self._config.mqtt_broker, self._config.mqtt_port)
+        delay = 1
+        while True:
+            try:
+                self._client.connect(self._config.mqtt_broker, self._config.mqtt_port)
+                break
+            except Exception as exc:
+                logger.error("Cannot connect to broker %s:%d, retrying in %ds: %s",
+                             self._config.mqtt_broker, self._config.mqtt_port, delay, exc)
+                time.sleep(delay)
+                delay = min(delay * 2, 128)
         self._client.loop_forever()
