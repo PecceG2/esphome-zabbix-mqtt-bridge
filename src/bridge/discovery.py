@@ -9,6 +9,7 @@ class SensorEntry:
     name: str
     domain: str
     state_topic: str
+    unit: Optional[str] = None
 
 
 class DiscoveryRegistry:
@@ -24,19 +25,23 @@ class DiscoveryRegistry:
             name=payload["name"],
             domain=domain,
             state_topic=payload["state_topic"],
+            unit=payload.get("unit_of_measurement"),
         )
         self._sensors[sensor_id] = entry
         return True, entry
 
-    def lld_payload(self) -> str:
-        data = [
-            {
+    def lld_payload(self, domain: str) -> str:
+        data = []
+        for e in self._sensors.values():
+            if e.domain != domain:
+                continue
+            row = {
                 "{#SENSOR_ID}": e.sensor_id,
                 "{#SENSOR_NAME}": e.name,
-                "{#SENSOR_DOMAIN}": e.domain,
             }
-            for e in self._sensors.values()
-        ]
+            if domain == "sensor":
+                row["{#SENSOR_UNIT}"] = e.unit or ""
+            data.append(row)
         return json.dumps({"data": data})
 
     def get_by_state_topic(self, topic: str) -> Optional[SensorEntry]:

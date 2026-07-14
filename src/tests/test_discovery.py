@@ -1,5 +1,4 @@
 import json
-import pytest
 from bridge.discovery import DiscoveryRegistry
 
 
@@ -16,6 +15,12 @@ BINARY_CFG = {
     "state_topic": "zbx/binary_sensor/esp32_k1/puerta/state",
 }
 
+TEXT_CFG = {
+    "unique_id": "esp32_k1_status",
+    "name": "Estado",
+    "state_topic": "zbx/text_sensor/esp32_k1/status/state",
+}
+
 
 def test_register_new_sensor_returns_true_and_entry():
     reg = DiscoveryRegistry()
@@ -25,6 +30,13 @@ def test_register_new_sensor_returns_true_and_entry():
     assert entry.name == "Temperatura"
     assert entry.domain == "sensor"
     assert entry.state_topic == "zbx/sensor/esp32_k1/temperatura/state"
+    assert entry.unit == "°C"
+
+
+def test_register_binary_has_no_unit():
+    reg = DiscoveryRegistry()
+    _, entry = reg.register("binary_sensor", BINARY_CFG)
+    assert entry.unit is None
 
 
 def test_register_duplicate_returns_false():
@@ -34,30 +46,53 @@ def test_register_duplicate_returns_false():
     assert is_new is False
 
 
-def test_lld_payload_contains_all_registered_sensors():
+def test_lld_payload_filters_by_domain():
     reg = DiscoveryRegistry()
     reg.register("sensor", SENSOR_CFG)
     reg.register("binary_sensor", BINARY_CFG)
-    data = json.loads(reg.lld_payload())["data"]
-    assert len(data) == 2
-    ids = {item["{#SENSOR_ID}"] for item in data}
-    assert "esp32_k1_temp" in ids
-    assert "esp32_k1_door" in ids
+    reg.register("text_sensor", TEXT_CFG)
+
+    sensor_ids = {r["{#SENSOR_ID}"] for r in json.loads(reg.lld_payload("sensor"))["data"]}
+    binary_ids = {r["{#SENSOR_ID}"] for r in json.loads(reg.lld_payload("binary_sensor"))["data"]}
+    text_ids = {r["{#SENSOR_ID}"] for r in json.loads(reg.lld_payload("text_sensor"))["data"]}
+
+    assert sensor_ids == {"esp32_k1_temp"}
+    assert binary_ids == {"esp32_k1_door"}
+    assert text_ids == {"esp32_k1_status"}
 
 
-def test_lld_payload_includes_all_macros():
+def test_lld_payload_sensor_includes_unit_macro():
     reg = DiscoveryRegistry()
     reg.register("sensor", SENSOR_CFG)
-    item = json.loads(reg.lld_payload())["data"][0]
-    assert item["{#SENSOR_ID}"] == "esp32_k1_temp"
-    assert item["{#SENSOR_NAME}"] == "Temperatura"
-    assert item["{#SENSOR_DOMAIN}"] == "sensor"
+    row = json.loads(reg.lld_payload("sensor"))["data"][0]
+    assert row["{#SENSOR_ID}"] == "esp32_k1_temp"
+    assert row["{#SENSOR_NAME}"] == "Temperatura"
+    assert row["{#SENSOR_UNIT}"] == "°C"
 
 
-def test_lld_payload_empty_registry():
+def test_lld_payload_sensor_missing_unit_is_empty_string():
     reg = DiscoveryRegistry()
-    data = json.loads(reg.lld_payload())["data"]
-    assert data == []
+    reg.register("sensor", {
+        "unique_id": "esp32_k1_count",
+        "name": "Contador",
+        "state_topic": "zbx/sensor/esp32_k1/count/state",
+    })
+    row = json.loads(reg.lld_payload("sensor"))["data"][0]
+    assert row["{#SENSOR_UNIT}"] == ""
+
+
+def test_lld_payload_binary_has_no_unit_macro():
+    reg = DiscoveryRegistry()
+    reg.register("binary_sensor", BINARY_CFG)
+    row = json.loads(reg.lld_payload("binary_sensor"))["data"][0]
+    assert "{#SENSOR_UNIT}" not in row
+    assert row["{#SENSOR_ID}"] == "esp32_k1_door"
+    assert row["{#SENSOR_NAME}"] == "Puerta"
+
+
+def test_lld_payload_empty_domain():
+    reg = DiscoveryRegistry()
+    assert json.loads(reg.lld_payload("sensor"))["data"] == []
 
 
 def test_get_by_state_topic_returns_entry():
