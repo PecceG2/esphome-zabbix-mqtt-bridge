@@ -2,6 +2,8 @@
 
 **Date:** 2026-07-13
 
+> **Note (2026-07-14):** The Zabbix integration described here (single `esphome.discovery` LLD key and single `esphome.sensor[...]` item key) has been superseded by per-domain typed keys. See [2026-07-14-typed-values-and-template-design.md](./2026-07-14-typed-values-and-template-design.md).
+
 ## Overview
 
 A Dockerized Python bridge that listens for ESPHome's native MQTT discovery messages and automatically registers sensors as Zabbix items via Low-Level Discovery (LLD). No Home Assistant required.
