@@ -101,7 +101,9 @@ The template creates three Zabbix trapper Low-Level Discovery rules — one per 
 | `binary_sensor` | `esphome.discovery.binary_sensor` | `esphome.binary_sensor[{#SENSOR_ID}]` | Numeric (unsigned) 0/1, mapped `ON`/`OFF` |
 | `text_sensor` | `esphome.discovery.text_sensor` | `esphome.text_sensor[{#SENSOR_ID}]` | Text |
 
-Available LLD macros: `{#SENSOR_ID}`, `{#SENSOR_NAME}` (all domains) and `{#SENSOR_UNIT}` (`sensor` only). Each rule also ships a `nodata(...,30m)` trigger prototype that fires when a discovered sensor stops reporting.
+Available LLD macros: `{#SENSOR_ID}`, `{#SENSOR_NAME}`, `{#DEVICE_NAME}` (all domains) and `{#SENSOR_UNIT}` (`sensor` only). Items are named `{#DEVICE_NAME}: {#SENSOR_NAME}` and carry a `device` tag so you can tell multiple devices apart. Each rule also ships a `nodata(...,30m)` trigger prototype that fires when a discovered sensor stops reporting.
+
+`{#SENSOR_ID}` is scoped per device (`<node>-<esphome_unique_id>`), where `<node>` comes from the discovery topic. This matters because ESPHome's default `unique_id` generator is **not** unique across devices — two boards with a sensor of the same name would otherwise collide on one Zabbix item. `{#DEVICE_NAME}` comes from the discovery payload's `dev.name` (falling back to the node name).
 
 Once a device comes online and publishes its discovery payload, the bridge sends the LLD to Zabbix, the matching item prototype fires, and values start flowing — no manual item configuration required.
 

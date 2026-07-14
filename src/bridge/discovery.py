@@ -5,10 +5,11 @@ from typing import Dict, Optional
 
 @dataclass
 class SensorEntry:
-    sensor_id: str
-    name: str
+    sensor_id: str        # globally unique: "<node>-<esphome unique_id>"
+    name: str             # entity name, e.g. "Temperatura"
     domain: str
     state_topic: str
+    device_name: str      # friendly device name for display, e.g. the board
     unit: Optional[str] = None
 
 
@@ -47,20 +48,26 @@ class DiscoveryRegistry:
     def __init__(self):
         self._sensors: Dict[str, SensorEntry] = {}
 
-    def register(self, domain: str, payload: dict) -> tuple:
-        sensor_id = _pick(payload, "unique_id", "uniq_id")
-        if sensor_id is None:
+    def register(self, domain: str, node: str, payload: dict) -> tuple:
+        raw_uid = _pick(payload, "unique_id", "uniq_id")
+        if raw_uid is None:
             raise KeyError("unique_id/uniq_id")
+        # ESPHome's default unique_id generator is not unique across devices,
+        # so scope it by the node name taken from the discovery topic.
+        sensor_id = f"{node}-{raw_uid}"
         if sensor_id in self._sensors:
             return False, self._sensors[sensor_id]
         state_topic = _pick(payload, "state_topic", "stat_t")
         if state_topic is None:
             raise KeyError("state_topic/stat_t")
+        dev = payload.get("dev") or payload.get("device") or {}
+        device_name = (dev.get("name") if isinstance(dev, dict) else None) or node
         entry = SensorEntry(
             sensor_id=sensor_id,
-            name=_pick(payload, "name") or sensor_id,
+            name=_pick(payload, "name") or raw_uid,
             domain=domain,
             state_topic=state_topic,
+            device_name=device_name,
             unit=_pick(payload, "unit_of_measurement", "unit_of_meas"),
         )
         self._sensors[sensor_id] = entry
@@ -74,6 +81,7 @@ class DiscoveryRegistry:
             row = {
                 "{#SENSOR_ID}": e.sensor_id,
                 "{#SENSOR_NAME}": e.name,
+                "{#DEVICE_NAME}": e.device_name,
             }
             if domain == "sensor":
                 row["{#SENSOR_UNIT}"] = e.unit or ""
