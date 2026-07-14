@@ -38,10 +38,14 @@ Add the following to your device's YAML. Use a discovery prefix that won't confl
 mqtt:
   broker: <mosquitto-ip>
   discovery: true
-  discovery_prefix: zbx
+  discovery_prefix: zbx   # where the .../config discovery messages are published
 ```
 
+> **Important — `discovery_prefix` vs `topic_prefix`:** the bridge's `DISCOVERY_PREFIX` must match ESPHome's **`discovery_prefix`** (where the retained `.../config` messages live), *not* `topic_prefix` (where state values live). These default to different values — `discovery_prefix` defaults to `homeassistant`, while `topic_prefix` defaults to the device name. If you leave `discovery_prefix` at its default, set `DISCOVERY_PREFIX=homeassistant` on the bridge. You can verify where your configs actually are with `mosquitto_sub -h <broker> -t '#' -v` and looking for the `.../config` topics.
+
 Supported entity domains: `sensor`, `binary_sensor`, `text_sensor`.
+
+> **Note on text sensors:** Home Assistant MQTT discovery has no `text_sensor` component, so ESPHome advertises `text_sensor` entities under the `sensor` component. The bridge detects this automatically — a `sensor` config with no `unit_of_measurement`/`state_class` is treated as text (Zabbix text item); one with a unit or state class is treated as numeric (Zabbix float item).
 
 ### 2. Configure the bridge
 

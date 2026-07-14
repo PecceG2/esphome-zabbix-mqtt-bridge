@@ -20,6 +20,14 @@ DISCOVERY_PAYLOAD = json.dumps({
     "unique_id": "esp32_k1_temp",
     "name": "Temperatura",
     "state_topic": "zbx/sensor/esp32_k1/temperatura/state",
+    "unit_of_measurement": "°C",
+}).encode()
+
+# ESPHome text_sensor: HA `sensor` component, no unit / state_class.
+TEXT_DISCOVERY_PAYLOAD = json.dumps({
+    "uniq_id": "esp32_k1_status",
+    "name": "Estado",
+    "stat_t": "zbx/sensor/esp32_k1/status/state",
 }).encode()
 
 
@@ -59,6 +67,17 @@ def test_handle_discovery_registers_sensor_and_sends_lld():
     ids = {r["{#SENSOR_ID}"] for r in json.loads(payload_arg)["data"]}
     assert ids == {"esp32_k1_temp"}
     mock_paho.subscribe.assert_called_with("zbx/sensor/esp32_k1/temperatura/state")
+
+
+def test_handle_discovery_text_sensor_under_sensor_component():
+    # A `sensor`-component config with no numeric hint is a text sensor.
+    client, registry, sender, mock_paho = make_client()
+    client._handle_discovery("homeassistant/sensor/ts/estado/config", TEXT_DISCOVERY_PAYLOAD)
+    entry = registry.get_by_state_topic("zbx/sensor/esp32_k1/status/state")
+    assert entry is not None
+    assert entry.domain == "text_sensor"
+    domain_arg, _ = sender.send_lld.call_args[0]
+    assert domain_arg == "text_sensor"
 
 
 def test_handle_discovery_duplicate_skips_lld_and_subscribe():

@@ -3,7 +3,7 @@ import logging
 import paho.mqtt.client as mqtt
 
 from bridge.config import Config
-from bridge.discovery import DiscoveryRegistry
+from bridge.discovery import DiscoveryRegistry, classify_domain
 from bridge.zabbix import ZabbixSender
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,8 @@ class MQTTClient:
     def _handle_discovery(self, topic: str, payload: bytes):
         try:
             cfg = json.loads(payload)
-            domain = topic.split("/")[1]
+            ha_component = topic.split("/")[1]
+            domain = classify_domain(ha_component, cfg)
             is_new, entry = self._registry.register(domain, cfg)
             if not is_new:
                 return
