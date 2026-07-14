@@ -46,7 +46,7 @@ class MQTTClient:
             if not is_new:
                 return
             logger.info("New sensor discovered: %s (%s, domain=%s)", entry.sensor_id, entry.name, entry.domain)
-            self._sender.send_lld(self._registry.lld_payload())
+            self._sender.send_lld(entry.domain, self._registry.lld_payload(entry.domain))
             self._client.subscribe(entry.state_topic)
             logger.info("Subscribed to state topic: %s", entry.state_topic)
         except Exception as exc:
@@ -58,7 +58,7 @@ class MQTTClient:
             return
         value = payload.decode()
         logger.debug("State update: %s = %s", entry.sensor_id, value)
-        self._sender.send_value(entry.sensor_id, value)
+        self._sender.send_value(entry.domain, entry.sensor_id, value)
 
     def start(self):
         import time

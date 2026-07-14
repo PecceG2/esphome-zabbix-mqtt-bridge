@@ -54,6 +54,10 @@ def test_handle_discovery_registers_sensor_and_sends_lld():
     client._handle_discovery("zbx/sensor/esp32_k1/temperatura/config", DISCOVERY_PAYLOAD)
     assert registry.get_by_state_topic("zbx/sensor/esp32_k1/temperatura/state") is not None
     sender.send_lld.assert_called_once()
+    domain_arg, payload_arg = sender.send_lld.call_args[0]
+    assert domain_arg == "sensor"
+    ids = {r["{#SENSOR_ID}"] for r in json.loads(payload_arg)["data"]}
+    assert ids == {"esp32_k1_temp"}
     mock_paho.subscribe.assert_called_with("zbx/sensor/esp32_k1/temperatura/state")
 
 
@@ -72,7 +76,7 @@ def test_handle_state_sends_value_for_known_topic():
     client._handle_discovery("zbx/sensor/esp32_k1/temperatura/config", DISCOVERY_PAYLOAD)
     sender.reset_mock()
     client._handle_state("zbx/sensor/esp32_k1/temperatura/state", b"23.5")
-    sender.send_value.assert_called_once_with("esp32_k1_temp", "23.5")
+    sender.send_value.assert_called_once_with("sensor", "esp32_k1_temp", "23.5")
 
 
 def test_handle_state_ignores_unknown_topic():
@@ -98,7 +102,7 @@ def test_on_message_routes_state_to_value():
     msg.topic = "zbx/sensor/esp32_k1/temperatura/state"
     msg.payload = b"21.0"
     client._on_message(mock_paho, None, msg)
-    sender.send_value.assert_called_once_with("esp32_k1_temp", "21.0")
+    sender.send_value.assert_called_once_with("sensor", "esp32_k1_temp", "21.0")
 
 
 def test_credentials_set_when_provided():
