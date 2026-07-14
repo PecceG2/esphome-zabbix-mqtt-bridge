@@ -10,18 +10,20 @@ class ZabbixSender:
         self._sender = _ZabbixSender(server, port)
         self._host = host
 
-    def send_lld(self, lld_json: str) -> None:
+    def send_lld(self, domain: str, lld_json: str) -> None:
+        key = f"esphome.discovery.{domain}"
         try:
-            metric = ZabbixMetric(self._host, "esphome.discovery", lld_json)
+            metric = ZabbixMetric(self._host, key, lld_json)
             response = self._sender.send([metric])
-            logger.info("LLD sent: %s", response)
+            logger.info("LLD sent (%s): %s", domain, response)
         except Exception as exc:
-            logger.error("Failed to send LLD: %s", exc)
+            logger.error("Failed to send LLD for %s: %s", domain, exc)
 
-    def send_value(self, sensor_id: str, value: str) -> None:
+    def send_value(self, domain: str, sensor_id: str, value: str) -> None:
+        key = f"esphome.{domain}[{sensor_id}]"
         try:
-            metric = ZabbixMetric(self._host, f"esphome.sensor[{sensor_id}]", value)
+            metric = ZabbixMetric(self._host, key, value)
             response = self._sender.send([metric])
-            logger.debug("Value sent for %s: %s", sensor_id, response)
+            logger.debug("Value sent for %s: %s", key, response)
         except Exception as exc:
-            logger.error("Failed to send value for %s: %s", sensor_id, exc)
+            logger.error("Failed to send value for %s: %s", key, exc)

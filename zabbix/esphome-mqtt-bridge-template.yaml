@@ -1,0 +1,90 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 94bf50ccf43549eaa75b561de22c3346
+      name: Templates/ESPHome
+  templates:
+    - uuid: 849b49d831f94e16bf4ac20518ea947d
+      template: 'ESPHome MQTT Bridge'
+      name: 'ESPHome MQTT Bridge'
+      description: |
+        Auto-discovers ESPHome sensors relayed by esphome-zabbix-mqtt-bridge.
+        One trapper LLD rule per ESPHome domain (sensor / binary_sensor /
+        text_sensor), each with a typed item prototype. Link this template to
+        the trapper host that receives the bridge's data (default: MQTT-Bridge).
+      groups:
+        - name: Templates/ESPHome
+      discovery_rules:
+        - uuid: efbe78957b30471485ea0c9b5f355235
+          name: 'ESPHome numeric sensors'
+          type: TRAP
+          key: esphome.discovery.sensor
+          lifetime: 7d
+          description: 'Discovers ESPHome `sensor` domain entities as numeric (float) items.'
+          item_prototypes:
+            - uuid: f4f63a51f6974d69ab6fc5e21ff41fa1
+              name: '{#SENSOR_NAME}'
+              type: TRAP
+              key: 'esphome.sensor[{#SENSOR_ID}]'
+              value_type: FLOAT
+              units: '{#SENSOR_UNIT}'
+              tags:
+                - tag: domain
+                  value: sensor
+          trigger_prototypes:
+            - uuid: 9853f904f4c44b29a9f0df9a3aec8fb0
+              expression: 'nodata(/ESPHome MQTT Bridge/esphome.sensor[{#SENSOR_ID}],30m)=1'
+              name: 'No data from {#SENSOR_NAME} for 30m'
+              priority: WARNING
+        - uuid: b2c41d7acaaf448a8402bd77e1c47d92
+          name: 'ESPHome binary sensors'
+          type: TRAP
+          key: esphome.discovery.binary_sensor
+          lifetime: 7d
+          description: 'Discovers ESPHome `binary_sensor` domain entities as numeric (0/1) items.'
+          item_prototypes:
+            - uuid: 93795bb64e184d5bb36e968b3502b3d8
+              name: '{#SENSOR_NAME}'
+              type: TRAP
+              key: 'esphome.binary_sensor[{#SENSOR_ID}]'
+              value_type: UNSIGNED
+              valuemap:
+                name: 'ESPHome Binary'
+              preprocessing:
+                - type: BOOL_TO_DECIMAL
+              tags:
+                - tag: domain
+                  value: binary_sensor
+          trigger_prototypes:
+            - uuid: 805646899d644cffae574015b2c55397
+              expression: 'nodata(/ESPHome MQTT Bridge/esphome.binary_sensor[{#SENSOR_ID}],30m)=1'
+              name: 'No data from {#SENSOR_NAME} for 30m'
+              priority: WARNING
+        - uuid: 9f44b47141674ef89d214f9d50becae1
+          name: 'ESPHome text sensors'
+          type: TRAP
+          key: esphome.discovery.text_sensor
+          lifetime: 7d
+          description: 'Discovers ESPHome `text_sensor` domain entities as text items.'
+          item_prototypes:
+            - uuid: 8c437dfda924458f9cf9f8966712fc94
+              name: '{#SENSOR_NAME}'
+              type: TRAP
+              key: 'esphome.text_sensor[{#SENSOR_ID}]'
+              value_type: TEXT
+              tags:
+                - tag: domain
+                  value: text_sensor
+          trigger_prototypes:
+            - uuid: 4fb985112edc4e948ea2a89b8753c2a6
+              expression: 'nodata(/ESPHome MQTT Bridge/esphome.text_sensor[{#SENSOR_ID}],30m)=1'
+              name: 'No data from {#SENSOR_NAME} for 30m'
+              priority: WARNING
+      valuemaps:
+        - uuid: 92af94bbf92743d18161e06bd1a4ee12
+          name: 'ESPHome Binary'
+          mappings:
+            - value: '0'
+              newvalue: 'OFF'
+            - value: '1'
+              newvalue: 'ON'

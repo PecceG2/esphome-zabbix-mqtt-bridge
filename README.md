@@ -83,17 +83,23 @@ This starts Mosquitto on port 1883 and the bridge. Mosquitto data and logs are p
 
 Create a host named `MQTT-Bridge` (or whatever you set as `ZABBIX_HOST`) with no agent interface — it only receives trapper data.
 
-**Discovery rule:**
-- Type: Zabbix trapper
-- Key: `esphome.discovery`
+Import the bundled template and link it to that host:
 
-**Item prototype** (inside the discovery rule):
-- Type: Zabbix trapper
-- Key: `esphome.sensor[{#SENSOR_ID}]`
-- Name: `{#SENSOR_NAME}`
-- Available macros: `{#SENSOR_ID}`, `{#SENSOR_NAME}`, `{#SENSOR_DOMAIN}`
+1. In Zabbix (7.0+), go to **Data collection → Templates → Import**.
+2. Select `zabbix/esphome-mqtt-bridge-template.yaml` from this repo and import it.
+3. Open the `MQTT-Bridge` host → **Templates** → link **ESPHome MQTT Bridge**.
 
-Once a device comes online and publishes its discovery payload, the bridge sends the LLD to Zabbix, the item prototype fires, and values start flowing — no manual item configuration required.
+The template creates three Zabbix trapper Low-Level Discovery rules — one per ESPHome domain — each with a typed item prototype:
+
+| ESPHome domain | Discovery rule key | Item key | Zabbix value type |
+|---|---|---|---|
+| `sensor` | `esphome.discovery.sensor` | `esphome.sensor[{#SENSOR_ID}]` | Numeric (float), unit from `{#SENSOR_UNIT}` |
+| `binary_sensor` | `esphome.discovery.binary_sensor` | `esphome.binary_sensor[{#SENSOR_ID}]` | Numeric (unsigned) 0/1, mapped `ON`/`OFF` |
+| `text_sensor` | `esphome.discovery.text_sensor` | `esphome.text_sensor[{#SENSOR_ID}]` | Text |
+
+Available LLD macros: `{#SENSOR_ID}`, `{#SENSOR_NAME}` (all domains) and `{#SENSOR_UNIT}` (`sensor` only). Each rule also ships a `nodata(...,30m)` trigger prototype that fires when a discovered sensor stops reporting.
+
+Once a device comes online and publishes its discovery payload, the bridge sends the LLD to Zabbix, the matching item prototype fires, and values start flowing — no manual item configuration required.
 
 ## Scope
 
