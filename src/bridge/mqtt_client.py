@@ -41,9 +41,11 @@ class MQTTClient:
     def _handle_discovery(self, topic: str, payload: bytes):
         try:
             cfg = json.loads(payload)
-            ha_component = topic.split("/")[1]
+            parts = topic.split("/")
+            ha_component = parts[1]
+            node = parts[2]
             domain = classify_domain(ha_component, cfg)
-            is_new, entry = self._registry.register(domain, cfg)
+            is_new, entry = self._registry.register(domain, node, cfg)
             if not is_new:
                 return
             logger.info("New sensor discovered: %s (%s, domain=%s)", entry.sensor_id, entry.name, entry.domain)

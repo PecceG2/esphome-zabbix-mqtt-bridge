@@ -72,6 +72,28 @@ def test_text_item_is_text():
     assert rule["item_prototypes"][0]["value_type"] == "TEXT"
 
 
+def test_item_names_include_device_macro():
+    doc = _load()
+    for rule in _template(doc)["discovery_rules"]:
+        proto = rule["item_prototypes"][0]
+        assert proto["name"] == "{#DEVICE_NAME}: {#SENSOR_NAME}"
+
+
+def test_items_have_domain_and_device_tags():
+    doc = _load()
+    for rule in _template(doc)["discovery_rules"]:
+        tags = {t["tag"]: t["value"] for t in rule["item_prototypes"][0]["tags"]}
+        assert tags.get("device") == "{#DEVICE_NAME}"
+        assert "domain" in tags
+
+
+def test_trigger_names_include_device_macro():
+    doc = _load()
+    for rule in _template(doc)["discovery_rules"]:
+        trig = rule["trigger_prototypes"][0]
+        assert trig["name"] == "No data from {#DEVICE_NAME}: {#SENSOR_NAME} for 30m"
+
+
 def test_all_uuids_are_valid_uuidv4():
     # Zabbix 7.0 import rejects any uuid that is not a real UUIDv4.
     with open(TEMPLATE_PATH, encoding="utf-8") as fh:
