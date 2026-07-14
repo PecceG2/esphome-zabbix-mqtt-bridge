@@ -1,4 +1,7 @@
 import os
+import re
+import uuid
+
 import yaml
 
 TEMPLATE_PATH = os.path.join(
@@ -67,6 +70,19 @@ def test_binary_item_is_unsigned_with_bool_preprocessing_and_valuemap():
 def test_text_item_is_text():
     rule = _rule_by_key(_load(), "esphome.discovery.text_sensor")
     assert rule["item_prototypes"][0]["value_type"] == "TEXT"
+
+
+def test_all_uuids_are_valid_uuidv4():
+    # Zabbix 7.0 import rejects any uuid that is not a real UUIDv4.
+    with open(TEMPLATE_PATH, encoding="utf-8") as fh:
+        raw = fh.read()
+    hexes = re.findall(r"uuid:\s*([0-9a-f]{32})", raw)
+    assert len(hexes) == 12
+    for h in hexes:
+        u = uuid.UUID(hex=h)
+        assert u.version == 4, f"{h} is not UUIDv4 (version={u.version})"
+        assert u.variant == uuid.RFC_4122, f"{h} has a non-RFC-4122 variant"
+    assert len(set(hexes)) == len(hexes), "duplicate uuids found"
 
 
 def test_binary_valuemap_defined():
